@@ -40,47 +40,60 @@ function tryCallOne(fn, a) {
     return IS_ERROR;
   }
 }
-function tryCallTwo(fn, a, b) {
+function tryCallThree(fn, a, b, c) {
   try {
-    fn(a, b);
+    fn(a, b, c);
   } catch (ex) {
     LAST_ERROR = ex;
     return IS_ERROR;
   }
 }
 
-module.exports = Promise;
+function Aborted() {}
 
-function Promise(fn) {
+module.exports = Promise2;
+
+function Promise2(fn) {
   if (typeof this !== 'object') {
     throw new TypeError('Promises must be constructed via new');
   }
   if (typeof fn !== 'function') {
-    throw new TypeError('Promise constructor\'s argument is not a function');
+    throw new TypeError('Promise2 constructor\'s argument is not a function');
   }
   this._deferredState = 0;
   this._state = 0;
   this._value = null;
   this._deferreds = null;
   if (fn === noop) return;
-  doResolve(fn, this);
+  doResolve(fn, this, true);
 }
-Promise._onHandle = null;
-Promise._onReject = null;
-Promise._noop = noop;
+Promise2._onHandle = null;
+Promise2._onReject = null;
+Promise2._noop = noop;
+Promise2.Aborted = Aborted
 
-Promise.prototype.then = function(onFulfilled, onRejected) {
-  if (this.constructor !== Promise) {
+Promise2.prototype.then = function(onFulfilled, onRejected) {
+  if (this.constructor !== Promise2) {
     return safeThen(this, onFulfilled, onRejected);
   }
-  var res = new Promise(noop);
+  var res = new Promise2(noop);
   handle(this, new Handler(onFulfilled, onRejected, res));
   return res;
 };
 
+Promise2.prototype.abort = function() {
+  if(this._state !== 0) // abort if and only if it's pending 
+    return;
+  if(!this._aborted && this._onabort) {
+    this._onabort();
+    if(this._state == 0)
+      reject(this, Aborted);
+  }
+  this._aborted = true;
+}
 function safeThen(self, onFulfilled, onRejected) {
   return new self.constructor(function (resolve, reject) {
-    var res = new Promise(noop);
+    var res = new Promise2(noop);
     res.then(resolve, reject);
     handle(self, new Handler(onFulfilled, onRejected, res));
   });
@@ -89,8 +102,8 @@ function handle(self, deferred) {
   while (self._state === 3) {
     self = self._value;
   }
-  if (Promise._onHandle) {
-    Promise._onHandle(self);
+  if (Promise2._onHandle) {
+    Promise2._onHandle(self);
   }
   if (self._state === 0) {
     if (self._deferredState === 0) {
@@ -146,14 +159,14 @@ function resolve(self, newValue) {
     }
     if (
       then === self.then &&
-      newValue instanceof Promise
+      newValue instanceof Promise2
     ) {
       self._state = 3;
       self._value = newValue;
       finale(self);
       return;
     } else if (typeof then === 'function') {
-      doResolve(then.bind(newValue), self);
+      doResolve(then.bind(newValue), self, false);
       return;
     }
   }
@@ -165,8 +178,8 @@ function resolve(self, newValue) {
 function reject(self, newValue) {
   self._state = 2;
   self._value = newValue;
-  if (Promise._onReject) {
-    Promise._onReject(self, newValue);
+  if (Promise2._onReject) {
+    Promise2._onReject(self, newValue);
   }
   finale(self);
 }
@@ -195,9 +208,9 @@ function Handler(onFulfilled, onRejected, promise){
  *
  * Makes no guarantees about asynchrony.
  */
-function doResolve(fn, promise) {
+function doResolve(fn, promise, withabort) {
   var done = false;
-  var res = tryCallTwo(fn, function (value) {
+  var res = tryCallThree(fn, function (value) {
     if (done) return;
     done = true;
     resolve(promise, value);
@@ -205,7 +218,13 @@ function doResolve(fn, promise) {
     if (done) return;
     done = true;
     reject(promise, reason);
-  });
+  }, withabort ? function (onabort) {
+    if (done && !promise._aborted) return true;
+    if (promise._aborted)
+      return false;
+    promise._onabort = onabort;
+    return true;
+  } : undefined);
   if (!done && res === IS_ERROR) {
     done = true;
     reject(promise, LAST_ERROR);

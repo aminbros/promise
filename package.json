@@ -1,8 +1,9 @@
 {
-  "name": "promise",
+  "name": "promise2",
   "version": "7.1.1",
-  "description": "Bare bones Promises/A+ implementation",
+  "description": "promise with abort a fork of promisejs.org",
   "main": "index.js",
+  "types": "types/promise2.d.ts",
   "scripts": {
     "prepublish": "node build",
     "pretest": "node build",
@@ -13,13 +14,14 @@
     "test-resolve": "mocha test/resolver-tests.js --timeout 200 --slow 999999",
     "test-extensions": "mocha test/extensions-tests.js --timeout 200 --slow 999999",
     "test-memory-leak": "node --expose-gc test/memory-leak.js",
+    "test-abort": "mocha test/abort-tests.js --timeout 4000",
     "coverage": "istanbul cover node_modules/mocha/bin/_mocha -- --bail --timeout 200 --slow 99999 -R dot"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/then/promise.git"
+    "url": "https://github.com/aminbros/promise2.git"
   },
-  "author": "ForbesLindesay",
+  "author": "Hossein Amin<hossein@aminbros.com>",
   "license": "MIT",
   "devDependencies": {
     "acorn": "^1.0.1",

@@ -1,3 +1,10 @@
+# Fork detail
+
+This fork of [promise](https://github.com/then/promise) is made to support
+abort feature for browser requests. And make a new name `Promise2` to not
+conflict with current Promise
+
+
 <a href="https://promisesaplus.com/"><img src="https://promisesaplus.com/assets/logo-small.png" align="right" /></a>
 # promise
 
