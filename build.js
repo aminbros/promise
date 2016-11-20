@@ -67,3 +67,14 @@ fs.readdirSync(__dirname + '/src').forEach(function (filename) {
   out = out.replace(/asap/g, "setImmediate");
   fs.writeFileSync(__dirname + '/setimmediate/' + filename, out);
 });
+
+
+rimraf.sync(__dirname + '/web/');
+fs.mkdirSync(__dirname + '/web/');
+fs.readdirSync(__dirname + '/src').forEach(function (filename) {
+  var src = fs.readFileSync(__dirname + '/src/' + filename, 'utf8');
+  var out = fixup(src);
+  out = out.replace(/var asap \= require\(\'([a-z\/]+)\'\);/g, '');
+  out = out.replace(/asap/g, "setTimeout");
+  fs.writeFileSync(__dirname + '/web/' + filename, out);
+});

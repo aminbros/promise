@@ -1,4 +1,4 @@
-/// <reference path="promise2.d.ts"/>
+/// <reference path="index.d.ts"/>
 
 var prom = new Promise2<Boolean>((resolve, reject) => {
 	resolve(true);
